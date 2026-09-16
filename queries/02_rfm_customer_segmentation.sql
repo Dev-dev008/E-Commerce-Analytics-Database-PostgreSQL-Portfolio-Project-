@@ -74,9 +74,9 @@ SELECT
     customer_segment,
     COUNT(customer_id) AS customer_count,
     ROUND((COUNT(customer_id)::NUMERIC / (SELECT COUNT(*) FROM customer_segments) * 100), 2) AS pct_of_customer_base,
-    ROUND(AVG(recency_days), 1) AS avg_recency_days,
-    ROUND(AVG(frequency), 2) AS avg_orders_per_customer,
-    TO_CHAR(ROUND(AVG(monetary_value), 2), '$FM999,990.00') AS avg_customer_spend,
+    ROUND(AVG(recency_days)::numeric, 1) AS avg_recency_days,
+    ROUND(AVG(frequency)::numeric, 2) AS avg_orders_per_customer,
+    TO_CHAR(ROUND(AVG(monetary_value)::numeric, 2), '$FM999,990.00') AS avg_customer_spend,
     TO_CHAR(SUM(monetary_value), '$FM999,999,990.00') AS total_segment_revenue,
     ROUND((SUM(monetary_value) / (SELECT SUM(monetary_value) FROM customer_segments) * 100), 2) AS pct_of_total_revenue
 FROM customer_segments

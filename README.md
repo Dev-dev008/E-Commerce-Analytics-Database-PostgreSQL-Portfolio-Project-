@@ -1,30 +1,32 @@
-# 🛒 E-Commerce Analytics Database (PostgreSQL Portfolio Project)
+# 🛒 E-Commerce Analytics & PostgreSQL Performance Engineering
 
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-14%2B-336791?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
-[![SQL Analytics](https://img.shields.io/badge/Advanced_SQL-CTEs_%7C_Window_Functions-blue?style=for-the-badge&logo=databricks&logoColor=white)](https://github.com/)
+[![SQL Analytics](https://img.shields.io/badge/Advanced_SQL-CTEs_%7C_Window_Functions-blue?style=for-the-badge&logo=databricks&logoColor=white)](queries/)
 [![Performance Tuning](https://img.shields.io/badge/Performance-EXPLAIN_ANALYZE-orange?style=for-the-badge&logo=speedtest&logoColor=white)](docs/performance_tuning_guide.md)
+[![Data Quality](https://img.shields.io/badge/Data_Quality-14_Checks_Passed-10B981?style=for-the-badge&logo=checkmarx&logoColor=white)](queries/08_data_quality_checks.sql)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg?style=for-the-badge)](LICENSE)
-[![Status](https://img.shields.io/badge/Project_Status-Production_Ready-brightgreen?style=for-the-badge)]()
 
-An enterprise-grade PostgreSQL analytics database modeling a modern direct-to-consumer (D2C) e-commerce retailer (**NovaMart**). 
+An end-to-end PostgreSQL analytics portfolio project modeling a modern direct-to-consumer (D2C) e-commerce retailer (**NovaMart**). 
 
-This repository serves as an end-to-end data engineering and analytics portfolio demonstration featuring **3NF relational database architecture**, **automated triggers**, **materialized views**, **production-grade indexes**, and **business intelligence SQL analyses** (RFM Customer Segmentation, Cohort Retention, Pareto 80/20 Rule, and Supply Chain Logistics).
+This repository demonstrates practical data engineering and analytical SQL capabilities: **3NF relational database architecture**, **automated inventory triggers**, **materialized view caching**, **production-grade indexes**, **automated data-quality audits**, and **business intelligence analyses** (RFM Customer Segmentation, Cohort Retention, Pareto 80/20 Rule, and Supply Chain Logistics).
 
 ---
 
 ## 📑 Table of Contents
 
 - [Business Context](#-business-context)
-- [Database Architecture & ERD](#-database-architecture--erd)
-- [Key Features & Engineering Highlights](#-key-features--engineering-highlights)
-- [Analytical Modules & Showcase Insights](#-analytical-modules--showcase-insights)
+- [Project Architecture & Data Pipeline](#-project-architecture--data-pipeline)
+- [Key Analytical Findings](#-key-analytical-findings)
+- [Database Architecture & 3NF Schema](#-database-architecture--3nf-schema)
+- [Analytical Modules & Query Showcase](#-analytical-modules--query-showcase)
   - [1. Executive Financial Performance & MoM Growth](#1-executive-financial-performance--mom-growth)
   - [2. RFM Customer Segmentation](#2-rfm-customer-segmentation)
   - [3. Month-over-Month Cohort Retention Matrix](#3-month-over-month-cohort-retention-matrix)
   - [4. Product Catalog Pareto Analysis (80/20 Rule)](#4-product-catalog-pareto-analysis-8020-rule)
-  - [5. Logistics & SLA Transit Analysis](#5-logistics--sla-transit-analysis)
+  - [5. Logistics & Delivery SLA Latency](#5-logistics--delivery-sla-latency)
   - [6. Payment Gateway Health & Return Leakage](#6-payment-gateway-health--return-leakage)
-  - [7. Query Performance & EXPLAIN ANALYZE Optimization](#7-query-performance--explain-analyze-optimization)
+- [Automated Data Quality Validation](#-automated-data-quality-validation)
+- [Query Performance Tuning & EXPLAIN ANALYZE](#-query-performance-tuning--explain-analyze)
 - [Repository Structure](#-repository-structure)
 - [Quick Start Guide](#-quick-start-guide)
 - [Dataset Characteristics](#-dataset-characteristics)
@@ -33,281 +35,272 @@ This repository serves as an end-to-end data engineering and analytics portfolio
 
 ## 💼 Business Context
 
-**NovaMart** is an omnichannel e-commerce store with operations spanning electronics, apparel, homeware, and lifestyle essentials. As transaction volumes scaled over a 24-month operating period, leadership faced critical business questions:
+**NovaMart** is an omnichannel e-commerce store with operations spanning electronics, apparel, homeware, and fitness essentials. As transaction volumes scaled over a 24-month operating period, leadership required answers to core unit economics and customer retention questions:
 
-1. **Unit Economics**: What is our true gross margin after factoring promo discounts, COGS, and shipping revenue?
-2. **Customer Lifetime Value & Churn**: Which customer cohorts sustain repeat purchasing, and where is the churn drop-off point?
-3. **Segmentation Strategy**: Who are our high-value "Champions" vs "At-Risk" buyers for targeted email marketing?
-4. **Inventory Concentration**: Does the Pareto principle hold (do 20% of product SKUs drive 80% of revenue)?
-5. **Logistics Bottlenecks**: Are delivery SLAs being met across all shipping territories?
+1. **Unit Economics**: What is our net revenue and gross profit margin after accounting for discounts, COGS, and shipping fees?
+2. **Customer Retention**: At what point in the customer lifecycle does purchasing stabilize, and what is the baseline repeat rate?
+3. **Customer Segmentation**: Which customer cohorts drive the majority of revenue, and what is the potential revenue at risk from churn?
+4. **Catalog Concentration**: Does the Pareto principle hold across our product catalog?
+5. **Logistics Performance**: What is our fulfillment transit time and state-level on-time SLA compliance?
 
 ---
 
-## 📐 Database Architecture & ERD
+## 🏗️ Project Architecture & Data Pipeline
 
-The database follows **Third Normal Form (3NF)** standards with strict referential integrity, domain constraints, custom ENUMs, and auto-computed total columns.
+The project implements a complete analytics lifecycle from synthetic data generation to business decision intelligence:
 
 ```mermaid
-erDiagram
-    CUSTOMERS ||--o{ ORDERS : places
-    CUSTOMERS ||--o{ REVIEWS : writes
-    CATEGORIES ||--o{ CATEGORIES : "parent of"
-    CATEGORIES ||--o{ PRODUCTS : categorizes
-    PRODUCTS ||--o{ ORDER_ITEMS : contains
-    PRODUCTS ||--o{ REVIEWS : receives
-    ORDERS ||--|{ ORDER_ITEMS : includes
-    ORDERS ||--o{ PAYMENTS : settles
-    ORDERS ||--o{ REVIEWS : verifies
-
-    CUSTOMERS {
-        int customer_id PK
-        string first_name
-        string last_name
-        string email UK
-        string city
-        string state
-        string acquisition_channel
-        timestamptz created_at
-    }
-
-    CATEGORIES {
-        int category_id PK
-        string category_name UK
-        int parent_category_id FK
-        text description
-    }
-
-    PRODUCTS {
-        int product_id PK
-        int category_id FK
-        string product_name
-        string sku UK
-        numeric cost_price
-        numeric sale_price
-        int stock_quantity
-        boolean is_active
-    }
-
-    ORDERS {
-        int order_id PK
-        int customer_id FK
-        timestamptz order_date
-        order_status_enum order_status
-        numeric subtotal_amount
-        numeric shipping_fee
-        numeric discount_amount
-        numeric total_amount
-        timestamptz delivery_date
-    }
-
-    ORDER_ITEMS {
-        int order_item_id PK
-        int order_id FK
-        int product_id FK
-        int quantity
-        numeric unit_price
-        numeric cost_price
-        numeric item_discount
-        numeric total_price "GENERATED"
-    }
-
-    PAYMENTS {
-        int payment_id PK
-        int order_id FK
-        payment_method_enum payment_method
-        payment_status_enum payment_status
-        numeric amount
-        string gateway_transaction_id UK
-    }
-
-    REVIEWS {
-        int review_id PK
-        int customer_id FK
-        int product_id FK
-        int order_id FK
-        smallint rating
-        string review_title
-        boolean is_verified_purchase
-    }
+flowchart TD
+    A["1. Data Synthesis & Ingestion<br/>(data/generate_data.py & 00_seed_all.sql)"] --> B["2. 3NF Relational Warehouse<br/>(schema/01_create_database.sql & 02_create_tables.sql)"]
+    B --> C["3. Performance & Automation Layer<br/>(Composite/Partial Indexes, Views, Triggers)"]
+    C --> D["4. Automated Data Quality Audit<br/>(queries/08_data_quality_checks.sql)"]
+    D --> E["5. Analytical SQL Engine<br/>(RFM, Cohorts, Pareto, Logistics, Payments)"]
+    E --> F["6. Business Intelligence & Strategy<br/>(Executive Dashboards & Marketing Playbooks)"]
 ```
 
 ---
 
-## ⚙️ Key Features & Engineering Highlights
+## 💡 Key Analytical Findings
 
-- **Domain Integrity Constraints**: CHECK constraints prevent invalid data (e.g. `rating BETWEEN 1 AND 5`, `delivery_date >= order_date`, `sale_price >= cost_price`, `stock_quantity >= 0`).
-- **Strategic Indexing Strategy**:
-  - B-Tree indexes on all Foreign Keys to accelerate JOIN operations.
-  - Composite indexes `(customer_id, order_date)` for fast cohort filtering.
-  - Partial indexes for active orders (`WHERE order_status IN ('pending', 'processing', 'shipped')`) and low stock alerts.
-  - GIN Trigram index (`pg_trgm`) for fuzzy catalog text search.
-- **Automated Inventory Trigger**: `trg_deduct_inventory` automatically adjusts product stock upon order item creation and aborts if inventory is insufficient.
-- **Materialized Views**: `mv_monthly_financial_performance` caches heavy aggregation calculations for sub-millisecond dashboard queries, refreshed via a stored procedure (`sp_refresh_analytics_views()`).
+Across the 24-month transaction dataset (2,141 orders, 1,200 customers, $448K gross sales), the SQL analysis uncovered the following primary business findings:
+
+- **Revenue Concentration (RFM Segmentation):** The top **31.39%** of customers (*Champions* and *Loyal Customers*, 367 total buyers) generate **51.62%** ($230,530) of total lifetime revenue. Conversely, 268 high-value customers (*At Risk* and *Need Attention*) represent **$141,929 (31.78%)** in revenue susceptible to churn.
+- **Cohort Retention Trajectory:** Month-1 customer retention averages **24.2%** across acquisition cohorts, before stabilizing after Month 3 at a steady repeat buyer rate of **12%–16%**.
+- **Product Catalog Pareto Distribution:** The top 20 product SKUs (52.6% of the 38-item catalog) generate **79.33%** of gross revenue ($355,604), with high-margin items like 4K monitors and adjustable dumbbells driving profitability.
+- **Logistics Fulfillment Lead Times:** Across 1,756 fulfilled shipments, the national average transit duration is **4.17 days** (median P50: **4.17 days**, P90: **6.21 days**). On-time 4-day SLA adherence varies significantly by geography, from 30.8% in Tennessee to 52.9% in Pennsylvania.
+- **Payment Gateway Reliability:** Credit cards represent 44.2% of all settlements with a 90.27% authorization rate. Apple Pay exhibited the lowest failure rate (1.29%), while refund leakage was concentrated in credit card payments ($13.89K).
+- **Execution Plan Optimization:** Replacing dynamic multi-table aggregations with a pre-aggregated materialized view slashed dashboard query latency from **6.22 ms to 0.21 ms (29.6x speedup)** and reduced buffer reads by **94.9%**.
 
 ---
 
-## 📊 Analytical Modules & Showcase Insights
+## 📐 Database Architecture & 3NF Schema
+
+The warehouse is designed in **Third Normal Form (3NF)** with strict referential integrity, custom ENUM types, and CHECK constraints.
+
+![Relational Warehouse ERD](docs/erd.png)
+
+### Key Engineering Constraints
+- **Domain Integrity Constraints**: CHECK constraints prevent invalid states (`rating BETWEEN 1 AND 5`, `delivery_date >= order_date`, `sale_price >= cost_price`, `stock_quantity >= 0`).
+- **Strategic Indexing Strategy**:
+  - B-Tree indexes on all Foreign Keys to accelerate JOIN operations.
+  - Composite indexes `(customer_id, order_date)` for fast customer timeline filtering.
+  - Partial indexes for active orders (`WHERE order_status IN ('pending', 'processing', 'shipped')`).
+  - GIN Trigram index (`pg_trgm`) for catalog text search.
+- **Automated Inventory Trigger**: `trg_deduct_inventory` deducts product stock upon line item insertion and raises an exception if stock is insufficient.
+- **Materialized Views**: `mv_monthly_financial_performance` caches monthly aggregations for dashboard queries, refreshed concurrently via `sp_refresh_analytics_views()`.
+
+---
+
+## 📊 Analytical Modules & Query Showcase
 
 ### 1. Executive Financial Performance & MoM Growth
 **File:** [`queries/01_executive_kpis.sql`](queries/01_executive_kpis.sql)
 
-Evaluates gross merchandise value (GMV), net revenue, cost of goods sold (COGS), gross margin percentage, average order value (AOV), and month-over-month (MoM) revenue growth using `LAG()` window functions.
+Evaluates gross merchandise value (GMV), net revenue, COGS, gross margin percentage, average order value (AOV), and month-over-month (MoM) revenue growth using `LAG()` window functions.
+
+![Executive Financial KPIs](docs/executive_kpis.png)
 
 ```sql
+WITH monthly_sales AS (
+    SELECT 
+        DATE_TRUNC('month', o.order_date)::DATE AS sales_month,
+        COUNT(DISTINCT o.order_id) AS total_orders,
+        COUNT(DISTINCT o.customer_id) AS active_customers,
+        SUM(o.subtotal_amount) AS gross_merchandise_value,
+        SUM(o.total_amount) AS net_revenue,
+        (SUM(o.total_amount) - SUM(oi.quantity * oi.cost_price)) AS gross_profit
+    FROM orders o
+    JOIN order_items oi ON o.order_id = oi.order_id
+    WHERE o.order_status NOT IN ('cancelled')
+    GROUP BY DATE_TRUNC('month', o.order_date)
+)
 SELECT 
-    TO_CHAR(sales_month, 'YYYY-MM') AS month_label,
+    sales_month,
     total_orders,
-    active_customers,
-    TO_CHAR(net_revenue, '$FM999,999,990.00') AS net_revenue,
-    TO_CHAR(gross_profit, '$FM999,999,990.00') AS gross_profit,
-    CONCAT(gross_margin_pct, '%') AS gross_margin,
-    TO_CHAR(average_order_value, '$FM999,990.00') AS aov,
-    CONCAT(mom_net_revenue_growth_pct, '%') AS mom_growth
-FROM metrics_with_growth
+    net_revenue,
+    gross_profit,
+    ROUND((gross_profit / NULLIF(net_revenue, 0)) * 100, 2) AS gross_margin_pct,
+    LAG(net_revenue) OVER (ORDER BY sales_month) AS prev_month_revenue,
+    ROUND(((net_revenue - LAG(net_revenue) OVER (ORDER BY sales_month)) / 
+           NULLIF(LAG(net_revenue) OVER (ORDER BY sales_month), 0)) * 100, 2) AS mom_growth_pct
+FROM monthly_sales
 ORDER BY sales_month DESC;
 ```
-
-**Key Business Insight:** Gross margin maintains a steady **58% - 63%**, with Organic Search and Google Ads driving over 50% of all acquired customer revenue.
 
 ---
 
 ### 2. RFM Customer Segmentation
 **File:** [`queries/02_rfm_customer_segmentation.sql`](queries/02_rfm_customer_segmentation.sql)
 
-Segments 1,200 customers across **Recency** (days since last purchase), **Frequency** (order volume), and **Monetary Value** (lifetime spend) using `NTILE(5)` quintile scoring.
+Classifies 1,200 customer profiles into behavioral tiers based on **Recency** (days since last purchase), **Frequency** (order count), and **Monetary Value** (lifetime spend) using `NTILE(5)` quintile window functions.
 
-| Customer Segment | Customer Count | % of Base | Avg Recency | Avg Orders | Avg Customer Spend | Revenue Share % |
-| :--- | :---: | :---: | :---: | :---: | :---: | :---: |
-| **Champions** | 134 | 11.2% | 24.3 days | 4.8 | $1,280.45 | **29.4%** |
-| **Loyal Customers** | 182 | 15.2% | 48.6 days | 3.1 | $742.10 | **23.1%** |
-| **Recent Promising** | 165 | 13.8% | 18.2 days | 1.4 | $298.50 | **8.4%** |
-| **At Risk Customers** | 148 | 12.3% | 194.5 days | 3.4 | $815.30 | **17.2%** |
-| **Lost Customers** | 210 | 17.5% | 340.2 days | 1.1 | $145.20 | **4.3%** |
+![RFM Customer Segmentation](docs/rfm_segmentation.png)
 
-**Actionable Strategy:** The top ~26% of customers (*Champions* + *Loyal*) generate over **52%** of total revenue. A win-back discount campaign targeted at the *At Risk* tier can reactivate ~$120K in high-margin repeat revenue.
+| Customer Segment | Customer Count | % of Base | Avg Recency | Avg Orders | Avg Spend | Total Revenue | Revenue Share % |
+| :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| **Loyal Customers** | 219 | 18.73% | 307.7 days | 1.92 | $535.09 | $117,184.52 | **26.24%** |
+| **Champions** | 148 | 12.66% | 180.9 days | 3.04 | $765.85 | $113,346.23 | **25.38%** |
+| **Need Attention** | 173 | 14.80% | 529.6 days | 2.27 | $502.58 | $86,947.09 | **19.47%** |
+| **At Risk Customers** | 95 | 8.13% | 683.3 days | 2.01 | $578.76 | $54,982.42 | **12.31%** |
+| **Recent Promising** | 174 | 14.88% | 214.4 days | 1.00 | $142.93 | $24,869.04 | **5.57%** |
+| **Standard Buyers** | 166 | 14.20% | 423.5 days | 1.22 | $128.14 | $21,270.78 | **4.76%** |
+| **Lost Customers** | 144 | 12.32% | 631.8 days | 1.00 | $106.27 | $15,303.25 | **3.43%** |
+| **Hibernating High Value** | 50 | 4.28% | 616.4 days | 1.00 | $252.56 | $12,627.93 | **2.83%** |
 
 ---
 
 ### 3. Month-over-Month Cohort Retention Matrix
 **File:** [`queries/03_cohort_retention_analysis.sql`](queries/03_cohort_retention_analysis.sql)
 
-Tracks customer acquisition cohorts over a 6-month lifecycle to calculate repeat buyer retention percentages:
+Constructs a customer retention matrix tracking acquisition cohorts from Month 0 through Month 6.
 
-| Cohort | Cohort Size | M0 Retention | M1 Retention | M2 Retention | M3 Retention | M4 Retention | M5 Retention |
-| :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| **2024-01** | 62 | 100% | 24.2% | 19.4% | 16.1% | 12.9% | 11.3% |
-| **2024-02** | 58 | 100% | 22.4% | 17.2% | 15.5% | 13.8% | 10.3% |
-| **2024-03** | 65 | 100% | 26.2% | 20.0% | 16.9% | 13.8% | 12.3% |
-| **2024-04** | 71 | 100% | 25.4% | 18.3% | 14.1% | 12.7% | 11.3% |
+![Cohort Retention Matrix](docs/cohort_retention.png)
 
-**Key Finding:** Customer drop-off stabilizes after Month 3 at ~13-16% monthly active repeat rate, matching benchmark D2C benchmarks.
+```text
+Key Retention Dynamics:
+├── Month 0 Baseline:  100% of acquired customers
+├── Month 1 Repeat:    24.2% average repeat buyer rate
+├── Month 2 Repeat:    18.4% average repeat buyer rate
+└── Month 3-6 Plateau: Stabilizes between 12.0% and 16.0% active monthly rate
+```
 
 ---
 
 ### 4. Product Catalog Pareto Analysis (80/20 Rule)
 **File:** [`queries/04_product_pareto_analysis.sql`](queries/04_product_pareto_analysis.sql)
 
-Utilizes windowed cumulative sums `SUM(total_revenue) OVER (ORDER BY total_revenue DESC)` to classify catalog items into **Tier A** (top 80% revenue drivers), **Tier B** (next 15%), and **Tier C** (bottom 5% long-tail).
+Applies running cumulative sums `SUM(total_revenue) OVER (ORDER BY total_revenue DESC)` to partition the product catalog into revenue driver tiers:
 
-```text
-Pareto Classification:
-├── Tier A (Top 80% Driver):      10 Products (26.3% of catalog generates 78.4% of total profit)
-├── Tier B (Mid 15% Contributor): 14 Products (36.8% of catalog generates 16.2% of total profit)
-└── Tier C (Tail 5% Long-Tail):   14 Products (36.8% of catalog generates 5.4% of total profit)
-```
+| Pareto Classification | Product Count | % of Catalog | Total Revenue Generated | Share of Total Revenue |
+| :--- | :---: | :---: | :---: | :---: |
+| **Tier A (Top 80% Drivers)** | 20 | 52.6% | $355,604.42 | **79.33%** |
+| **Tier B (Mid 15% Contributors)** | 11 | 28.9% | $69,451.69 | **15.49%** |
+| **Tier C (Tail 5% Long-Tail)** | 7 | 18.5% | $23,207.44 | **5.18%** |
 
 ---
 
-### 5. Logistics & SLA Transit Analysis
+### 5. Logistics & Delivery SLA Latency
 **File:** [`queries/05_logistics_and_shipping.sql`](queries/05_logistics_and_shipping.sql)
 
-Calculates transit lead time from order placement to delivery milestone using `PERCENTILE_CONT` and SLA flags (e.g. `<= 4` day delivery window):
-- **Average Transit Time:** 3.84 days.
-- **Median Transit Time (P50):** 3.71 days.
-- **P90 Latency:** 4.98 days.
-- **National SLA Adherence:** 86.4% on-time fulfillment rate.
+Evaluates fulfillment transit times using `PERCENTILE_CONT(0.50)` (median) and `PERCENTILE_CONT(0.90)` across destination states:
+
+![Logistics SLA Fulfillment](docs/logistics_sla.png)
+
+- **National Total Deliveries:** 1,756 fulfilled shipments.
+- **National Mean Transit Duration:** 4.17 days.
+- **National Median (P50):** 4.17 days.
+- **P90 Latency Benchmark:** 6.21 days.
+- **4-Day SLA Compliance:** 41.8% average on-time delivery across all states.
 
 ---
 
 ### 6. Payment Gateway Health & Return Leakage
 **File:** [`queries/06_payment_and_returns.sql`](queries/06_payment_and_returns.sql)
 
-Monitors gateway authorization success rates, refund leakage by payment rails (Credit Card vs UPI vs PayPal), and correlates star rating sentiment against return rate percentages.
+Monitors authorization success rates and refund leakage across payment rails:
+
+| Payment Method | Total Transactions | Successful Settlements | Refunded | Failed | Success Rate | Processed Volume | Refund Leakage |
+| :--- | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
+| **Credit Card** | 946 | 854 | 54 | 15 | 90.27% | $213,766.02 | $13,890.64 |
+| **Debit Card** | 436 | 397 | 20 | 7 | 91.06% | $96,254.59 | $4,582.52 |
+| **PayPal** | 364 | 331 | 23 | 5 | 90.93% | $79,725.87 | $7,756.58 |
+| **Apple Pay** | 233 | 209 | 12 | 3 | 89.70% | $49,744.03 | $3,029.03 |
+| **UPI** | 114 | 103 | 8 | 3 | 90.35% | $26,150.94 | $1,759.84 |
+| **Bank Transfer** | 48 | 44 | 4 | 0 | 91.67% | $10,446.27 | $290.43 |
 
 ---
 
-### 7. Query Performance & EXPLAIN ANALYZE Optimization
-**File:** [`queries/07_performance_tuning_explain_analyze.sql`](queries/07_performance_tuning_explain_analyze.sql) | **In-Depth Guide:** [`docs/performance_tuning_guide.md`](docs/performance_tuning_guide.md)
+## 🛡️ Automated Data Quality Validation
 
-Production database engineering requires more than writing syntactically correct queries—it demands deep understanding of query planning, cost models, buffer cache hits, and index strategies. This module provides an empirical performance analysis using PostgreSQL's `EXPLAIN (ANALYZE, BUFFERS, VERBOSE)` across 7 optimization scenarios.
+**File:** [`queries/08_data_quality_checks.sql`](queries/08_data_quality_checks.sql)
 
-> 📖 **Engineering Guide:** For complete execution plan trees, memory configuration (`work_mem`, `shared_buffers`), and cost model calculations, see [`docs/performance_tuning_guide.md`](docs/performance_tuning_guide.md).
+To ensure high data reliability prior to BI ingestion, an automated audit suite runs 14 integrity checks covering referential constraints, temporal order, financial sanity, and duplicate prevention:
 
-#### 📊 Performance Optimization Benchmark Matrix
+| Rule ID | Category | Validation Check | Violations | Status |
+| :---: | :--- | :--- | :---: | :---: |
+| **1** | Referential Integrity | Orders → Customers FK Resolution | 0 | ✅ PASS |
+| **2** | Referential Integrity | Order Items → Orders FK Resolution | 0 | ✅ PASS |
+| **3** | Referential Integrity | Order Items → Products FK Resolution | 0 | ✅ PASS |
+| **4** | Referential Integrity | Payments → Orders FK Resolution | 0 | ✅ PASS |
+| **5** | Temporal Sequence | Delivery Date >= Order Date | 0 | ✅ PASS |
+| **6** | Temporal Sequence | No Future Order Timestamps | 0 | ✅ PASS |
+| **7** | Financial Sanity | Sale Price >= Cost Price (Non-negative Margins) | 0 | ✅ PASS |
+| **8** | Financial Sanity | Order Total = Subtotal - Discount + Shipping | 0 | ✅ PASS |
+| **9** | Financial Sanity | Header Subtotal Reconciles With Item Totals | 0 | ✅ PASS |
+| **10** | Status Consistency | Delivered Orders Require Delivery Date | 0 | ✅ PASS |
+| **11** | Status Consistency | No Completed Payments on Cancelled Orders | 0 | ✅ PASS |
+| **12** | Uniqueness & Keys | Customer Email Uniqueness | 0 | ✅ PASS |
+| **13** | Uniqueness & Keys | Product SKU Uniqueness | 0 | ✅ PASS |
+| **14** | Uniqueness & Keys | Gateway Transaction ID Uniqueness | 0 | ✅ PASS |
 
-| Optimization Case Study | Baseline Execution Strategy | Optimized Execution Strategy | Planner Cost (Before → After) | Execution Time (Before → After) | Buffer I/O Reduction | Key Architectural Takeaway |
-| :--- | :--- | :--- | :---: | :---: | :---: | :--- |
-| **1. Foreign Key Filter & Join** | `Seq Scan on order_items` (discards 3,508 rows) | `Bitmap Index Scan` on `idx_order_items_product_id` | 78.24 → **44.18** | 0.704 ms → **0.541 ms** | Shared hit blocks reduced | Prevents full table scan on 3,600+ rows; scales O(log N) on multi-million row tables. |
-| **2. Composite Index & Ordering** | `Bitmap Scan` + In-memory `Quicksort` | `Index Scan` on `idx_orders_customer_date` | 13.77 → **8.33** | 0.169 ms → **0.040 ms** (76% faster) | Zero sort memory (`work_mem`) | Pre-sorted B-Tree index completely eliminates explicit memory sort overhead. |
-| **3. Hot Operational Table** | Full `Seq Scan` (2,141 rows evaluated) | `Partial Index Scan` on `idx_orders_active_pipeline` | 62.76 → **41.56** | 2.425 ms → **0.328 ms** (86% faster) | 88% smaller index size | Indexes only open orders (`pending`, `processing`, `shipped`), keeping index cached in RAM. |
-| **4. Substring Fuzzy Search** | Full `Seq Scan` (Standard B-Tree fails on `%...%`) | `Bitmap GIN Index Scan` on `idx_products_name_trgm` | 12.00 → **30.70** (Indexed) | Full Table Scan → Direct GIN Lookup | Fixed page reads | Trigram 3-gram token indexing (`pg_trgm`) enables sub-millisecond catalog autocomplete. |
-| **5. Multi-Table OLAP Aggregation** | 2-Table Hash Join + GroupAggregate + 2 Quicksorts | Direct Single-Page Read on Materialized View | 504.76 → **1.94** (99.6% drop) | 8.564 ms → **0.115 ms** (74x faster!) | 81 hits → **1 single buffer hit** | Pre-computed summary replaces expensive dynamic joins for real-time executive dashboards. |
+---
 
-#### 🔍 Execution Plan Deep Dive: Dynamic Query vs. Materialized View
+## ⚡ Query Performance Tuning & EXPLAIN ANALYZE
 
-```text
-Baseline (Dynamic Join & Aggregation across orders + order_items):
-Sort  (cost=504.26..504.76 rows=200 width=220) (actual time=8.320..8.322 rows=26 loops=1)
-  Sort Method: quicksort  Memory: 27kB  Buffers: shared hit=81
-  ->  GroupAggregate  (cost=391.53..496.61 rows=200 width=220) (actual time=5.796..8.267)
-        ->  Sort (Hash Join between orders and order_items) Memory: 342kB
-Total Execution Time: 8.564 ms | Buffers Examined: 81 shared hit blocks
+**File:** [`queries/07_performance_tuning_explain_analyze.sql`](queries/07_performance_tuning_explain_analyze.sql) | **Engineering Guide:** [`docs/performance_tuning_guide.md`](docs/performance_tuning_guide.md)
 
-Optimized (Pre-Aggregated Materialized View mv_monthly_financial_performance):
-Sort  (cost=1.87..1.94 rows=26 width=212) (actual time=0.078..0.081 rows=26 loops=1)
-  Buffers: shared hit=1
-  ->  Seq Scan on mv_monthly_financial_performance  (cost=0.00..1.26 rows=26)
-Total Execution Time: 0.115 ms | Buffers Examined: 1 block (74.4x speedup, 98.8% I/O reduction)
-```
+Using PostgreSQL's `EXPLAIN (ANALYZE, BUFFERS, VERBOSE)`, queries were benchmarked to identify sequential scan bottlenecks, sort memory spills, and buffer read efficiency:
 
-#### 🛡️ Database Cache & Index Health Audit
-- **Buffer Cache Hit Ratio:** **99.96%** (113,346 memory blocks hit vs 43 disk blocks read), verifying that virtually all analytical page requests are satisfied directly in RAM.
-- **Index Scan Utilization:** The core transactional table `orders` demonstrates **72.0%** index scan utilization, eliminating table-wide sequential scans across primary business reporting paths.
+![Performance Before vs After](docs/performance_before_after.png)
+
+### Performance Benchmark Matrix
+
+| Workload Scenario | Baseline Execution Strategy | Optimized Strategy | Baseline Latency | Optimized Latency | Speedup | Buffer I/O Reduction | Key Architectural Takeaway |
+| :--- | :--- | :--- | :---: | :---: | :---: | :---: | :--- |
+| **Monthly Financial KPIs** | Dynamic Multi-Table Join CTE | Materialized View (`mv_monthly_financial_performance`) | 6.22 ms | **0.21 ms** | **29.6x** | **94.9%** (78 → 4 blocks) | Pre-computed aggregation + Clustered unique index eliminates multi-table joins. |
+| **Active Pipeline Orders** | Full Heap Scan (2,141 rows evaluated) | Partial Index (`idx_orders_active_pipeline`) | 0.63 ms | **0.38 ms** | **1.7x** | **92.6%** (27 → 2 blocks) | Index-Only Scan with 0 heap fetches; skips 89% of historical closed orders. |
+| **Customer Timeline Lookup** | Unindexed Full Table Filter Scan | Composite Index (`idx_orders_customer_date`) | 0.52 ms | **0.12 ms** | **4.3x** | **88.9%** (27 → 3 blocks) | Direct B-Tree descent on `(customer_id, order_date)`, eliminating memory quicksort. |
+
+### System Cache & Index Diagnostics
+- **Buffer Cache Hit Ratio:** **99.96%** (113,346 memory blocks hit vs 43 disk reads), verifying in-memory working set retention.
+- **Orders Index Utilization:** **72.0%** index scan utilization on the core transactional table.
+
+> 📖 **Deep Dive:** For detailed PostgreSQL cost model formulas, Volcano iterator pipeline explanations, and production `postgresql.conf` memory tuning (`work_mem`, `shared_buffers`), refer to [`docs/performance_tuning_guide.md`](docs/performance_tuning_guide.md).
 
 ---
 
 ## 🗂️ Repository Structure
 
+Every file in this repository is verified and present in the filesystem:
+
 ```text
 ecommerce-analytics-postgres/
-├── README.md                          # Showcase portfolio presentation
-├── .gitignore                         # Git exclusion rules
+├── LICENSE                                    # MIT License
+├── README.md                                  # Showcase portfolio documentation
+├── .gitignore                                 # Git exclusion rules
 ├── docs/
-│   ├── data_dictionary.md             # Complete schema data dictionary & data types
-│   └── performance_tuning_guide.md    # In-depth EXPLAIN ANALYZE execution plan breakdown
+│   ├── cohort_retention.png                   # Cohort retention matrix output visual
+│   ├── data_dictionary.md                     # Schema data dictionary & type definitions
+│   ├── erd.png                                # Entity-relationship diagram (3NF)
+│   ├── executive_kpis.png                     # Executive financial performance table visual
+│   ├── logistics_sla.png                      # Regional logistics fulfillment visual
+│   ├── performance_before_after.png           # EXPLAIN ANALYZE benchmark visual comparison
+│   ├── performance_tuning_guide.md            # Deep dive query optimization guide
+│   └── rfm_segmentation.png                   # RFM segmentation output visual
 ├── schema/
-│   ├── 01_create_database.sql         # Database initialization & extensions
-│   ├── 02_create_tables.sql           # DDL with 3NF relational models & constraints
-│   ├── 03_create_indexes.sql          # Foreign key, composite & partial indexes
-│   └── 04_views_and_functions.sql     # Materialized views, triggers & procedures
+│   ├── 01_create_database.sql                 # Database initialization & extensions
+│   ├── 02_create_tables.sql                   # DDL with 3NF relational models & constraints
+│   ├── 03_create_indexes.sql                  # Foreign key, composite & partial indexes
+│   └── 04_views_and_functions.sql             # Materialized views, triggers & procedures
 ├── data/
-│   ├── generate_data.py               # Deterministic synthetic data generator
-│   ├── 00_seed_all.sql                # Master bulk \copy data ingestion script
-│   ├── categories.csv                 # 10 product categories
-│   ├── products.csv                   # 38 catalog products with cost/sale prices
-│   ├── customers.csv                  # 1,200 multi-channel customer records
-│   ├── orders.csv                     # 2,141 transactions spanning 24 months
-│   ├── order_items.csv                # 3,604 order line items
-│   ├── payments.csv                   # 2,141 payment settlements
-│   └── reviews.csv                    # 645 customer product reviews
+│   ├── 00_seed_all.sql                        # Bulk data ingestion script
+│   ├── generate_data.py                       # Synthetic dataset generator
+│   ├── categories.csv                         # 10 product categories
+│   ├── products.csv                           # 38 catalog products with cost/sale prices
+│   ├── customers.csv                          # 1,200 multi-channel customer profiles
+│   ├── orders.csv                             # 2,141 transactions spanning 24 months
+│   ├── order_items.csv                        # 3,604 order line items
+│   ├── payments.csv                           # 2,141 payment settlements
+│   └── reviews.csv                            # 645 customer product reviews
 └── queries/
-    ├── 01_executive_kpis.sql          # GMV, Net Revenue, COGS, MoM Growth %
-    ├── 02_rfm_customer_segmentation.sql # RFM scoring (NTILE quintiles & tiers)
-    ├── 03_cohort_retention_analysis.sql # Month-over-Month cohort retention matrix
-    ├── 04_product_pareto_analysis.sql # 80/20 Pareto revenue distribution
-    ├── 05_logistics_and_shipping.sql  # Delivery duration, P90 latency & SLA compliance
-    ├── 06_payment_and_returns.sql     # Payment gateway reliability & refund audit
-    └── 07_performance_tuning_explain_analyze.sql # EXPLAIN ANALYZE optimization, index design & benchmarks
+    ├── 01_executive_kpis.sql                  # GMV, Net Revenue, COGS, MoM Growth %
+    ├── 02_rfm_customer_segmentation.sql       # RFM scoring (NTILE quintiles & tiers)
+    ├── 03_cohort_retention_analysis.sql       # Month-over-Month cohort retention matrix
+    ├── 04_product_pareto_analysis.sql         # 80/20 Pareto revenue distribution
+    ├── 05_logistics_and_shipping.sql          # Delivery duration, P90 latency & SLA compliance
+    ├── 06_payment_and_returns.sql             # Payment gateway reliability & refund audit
+    ├── 07_performance_tuning_explain_analyze.sql # EXPLAIN ANALYZE optimization benchmarks
+    └── 08_data_quality_checks.sql             # Automated data quality & integrity test suite
 ```
 
 ---
@@ -315,46 +308,44 @@ ecommerce-analytics-postgres/
 ## 🚀 Quick Start Guide
 
 ### Prerequisites
-- [PostgreSQL](https://www.postgresql.org/download/) (v12 or higher)
-- [Python 3.8+](https://www.python.org/) *(Optional, only if regenerating raw data)*
+- [PostgreSQL](https://www.postgresql.org/download/) (v14 or higher)
+- [Python 3.8+](https://www.python.org/) *(Optional, only if re-generating synthetic data)*
 
 ### 1. Clone the Repository
 ```bash
-git clone https://github.com/<your-username>/ecommerce-analytics-postgres.git
-cd ecommerce-analytics-postgres
+git clone https://github.com/Dev-dev008/sample-1.git
+cd sample-1
 ```
 
-### 2. Initialize Database & Tables
-Open your terminal or `psql`:
-
+### 2. Initialize Database & Schema
 ```bash
 # Connect to PostgreSQL and create database
 psql -U postgres -c "CREATE DATABASE ecommerce_analytics;"
 
-# Run Schema DDL scripts
+# Execute schema DDL scripts
 psql -U postgres -d ecommerce_analytics -f schema/01_create_database.sql
 psql -U postgres -d ecommerce_analytics -f schema/02_create_tables.sql
 psql -U postgres -d ecommerce_analytics -f schema/03_create_indexes.sql
 psql -U postgres -d ecommerce_analytics -f schema/04_views_and_functions.sql
 ```
 
-### 3. Load Seed Data
-Import all pre-generated CSV datasets in one command:
-
+### 3. Ingest Seed Data
 ```bash
 psql -U postgres -d ecommerce_analytics -f data/00_seed_all.sql
 ```
 
-*(Optional: To re-generate custom synthetic datasets with different parameters, run `python data/generate_data.py` prior to seeding).*
-
-### 4. Run Analytical Queries & Performance Benchmarks
-Execute any query script to view business intelligence outputs or performance diagnostics:
-
+### 4. Run Analytical Queries, Performance Benchmarks & Quality Audits
 ```bash
+# Run business intelligence queries
 psql -U postgres -d ecommerce_analytics -f queries/01_executive_kpis.sql
 psql -U postgres -d ecommerce_analytics -f queries/02_rfm_customer_segmentation.sql
 psql -U postgres -d ecommerce_analytics -f queries/03_cohort_retention_analysis.sql
+
+# Run query performance benchmarks
 psql -U postgres -d ecommerce_analytics -f queries/07_performance_tuning_explain_analyze.sql
+
+# Run automated data quality checks
+psql -U postgres -d ecommerce_analytics -f queries/08_data_quality_checks.sql
 ```
 
 ---
@@ -363,9 +354,9 @@ psql -U postgres -d ecommerce_analytics -f queries/07_performance_tuning_explain
 
 - **Total Historical Period:** 24 continuous calendar months.
 - **Unique Customers:** 1,200 profiles with realistic email domains and geographical coordinates across 20 major US metropolitan areas.
-- **Total Orders Placed:** 2,141 orders with realistic order statuses (82% Delivered, 5% Cancelled, 2% Returned).
+- **Total Orders Placed:** 2,141 orders (82.0% Delivered, 5.5% Cancelled, 4.9% Shipped, 3.6% Processing, 2.3% Pending, 1.7% Returned).
 - **Line Items:** 3,604 purchased items mapped to master catalog margins.
-- **Payment Methods:** Multi-rail distribution (Credit Card 45%, Debit Card 20%, PayPal 18%, Apple Pay 10%, UPI 5%, Bank Transfer 2%).
+- **Payment Methods:** Multi-rail distribution (Credit Card 44.2%, Debit Card 20.4%, PayPal 17.0%, Apple Pay 10.9%, UPI 5.3%, Bank Transfer 2.2%).
 
 ---
 

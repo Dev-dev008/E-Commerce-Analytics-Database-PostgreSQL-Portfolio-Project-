@@ -1,0 +1,39 @@
+product_id,category_id,product_name,sku,cost_price,sale_price,stock_quantity,is_active,created_at
+1,1,Apex Wireless Noise-Cancelling Headphones,PROD-01-1001,75.00,179.99,120,TRUE,2023-11-15 09:00:00+00
+2,1,UltraView 27-inch 4K USB-C Monitor,PROD-01-1002,210.00,399.99,45,TRUE,2023-11-15 09:00:00+00
+3,1,Pulse Wireless Mechanical Keyboard (RGB),PROD-01-1003,48.00,119.99,85,TRUE,2023-11-15 09:00:00+00
+4,1,Glide Pro Ergonomic Wireless Mouse,PROD-01-1004,22.00,69.99,140,TRUE,2023-11-15 09:00:00+00
+5,1,HyperVolt 100W GaN Fast Charger,PROD-01-1005,16.00,49.99,210,TRUE,2023-11-15 09:00:00+00
+6,2,SoundWave Mini Portable Bluetooth Speaker,PROD-02-1006,18.50,49.99,175,TRUE,2023-11-15 09:00:00+00
+7,2,StudioPro Open-Back Reference Headphones,PROD-02-1007,110.00,249.99,35,TRUE,2023-11-15 09:00:00+00
+8,2,AeroPod True Wireless Earbuds with ANC,PROD-02-1008,38.00,89.99,160,TRUE,2023-11-15 09:00:00+00
+9,3,"Lumina Smart LED Strip (16M Colors, 5m)",PROD-03-1009,12.00,34.99,190,TRUE,2023-11-15 09:00:00+00
+10,3,HomeGuard 2K Wireless Security Camera,PROD-03-1010,32.00,79.99,80,TRUE,2023-11-15 09:00:00+00
+11,3,Aura Smart Ambient Light Bar Duo,PROD-03-1011,28.00,69.99,95,TRUE,2023-11-15 09:00:00+00
+12,4,Core Merino Wool Crewneck Sweater,PROD-04-1012,30.00,88.00,110,TRUE,2023-11-15 09:00:00+00
+13,4,All-Weather Technical Windbreaker Jacket,PROD-04-1013,42.00,124.99,70,TRUE,2023-11-15 09:00:00+00
+14,4,Tailored Slim-Fit Chino Pants,PROD-04-1014,24.00,68.00,130,TRUE,2023-11-15 09:00:00+00
+15,4,Everyday Organic Cotton Heavyweight T-Shirt,PROD-04-1015,8.50,28.00,260,TRUE,2023-11-15 09:00:00+00
+16,4,Thermal Fleece Winter Pullover,PROD-04-1016,26.00,74.99,85,TRUE,2023-11-15 09:00:00+00
+17,5,Velocity Carbon-Plated Running Shoes,PROD-05-1017,55.00,159.99,65,TRUE,2023-11-15 09:00:00+00
+18,5,CloudWalk Casual Canvas Low-Tops,PROD-05-1018,20.00,59.99,150,TRUE,2023-11-15 09:00:00+00
+19,5,Trekker Waterproof Trail Hiking Boots,PROD-05-1019,62.00,169.99,50,TRUE,2023-11-15 09:00:00+00
+20,5,Retro Classic Leather Sneakers,PROD-05-1020,35.00,99.99,90,TRUE,2023-11-15 09:00:00+00
+21,6,BaristaPro Precision Burr Coffee Grinder,PROD-06-1021,45.00,129.99,60,TRUE,2023-11-15 09:00:00+00
+22,6,CastIron 5.5 Quart Enameled Dutch Oven,PROD-06-1022,38.00,99.99,75,TRUE,2023-11-15 09:00:00+00
+23,6,ChefSelect Japanese 8-inch Damascus Chef Knife,PROD-06-1023,32.00,89.99,80,TRUE,2023-11-15 09:00:00+00
+24,6,HydroPure Multi-Stage Countertop Water Filter,PROD-06-1024,25.00,69.99,115,TRUE,2023-11-15 09:00:00+00
+25,6,AeroPress Go Travel Coffee Press,PROD-06-1025,14.00,39.95,140,TRUE,2023-11-15 09:00:00+00
+26,7,FlexiBands Resistance Bands Set (5-Pack),PROD-07-1026,6.50,24.99,220,TRUE,2023-11-15 09:00:00+00
+27,7,ProForm High-Density Foam Roller (36 in),PROD-07-1027,11.00,32.00,130,TRUE,2023-11-15 09:00:00+00
+28,7,IronCore Adjustable Dumbbells (Pair 50lbs),PROD-07-1028,140.00,329.99,30,TRUE,2023-11-15 09:00:00+00
+29,7,Zenith Eco-Friendly Cork Yoga Mat,PROD-07-1029,18.00,54.99,90,TRUE,2023-11-15 09:00:00+00
+30,8,HydraGlow Hyaluronic Acid Vitamin C Serum,PROD-08-1030,7.00,28.00,180,TRUE,2023-11-15 09:00:00+00
+31,8,Botanical Gentle Foaming Face Cleanser,PROD-08-1031,5.50,22.00,210,TRUE,2023-11-15 09:00:00+00
+32,8,Revitalize Peptide Night Repair Cream,PROD-08-1032,12.00,42.00,140,TRUE,2023-11-15 09:00:00+00
+33,9,ErgoSpine Mesh High-Back Office Chair,PROD-09-1033,115.00,289.99,40,TRUE,2023-11-15 09:00:00+00
+34,9,Solid Oak Monitor Riser & Desk Organizer,PROD-09-1034,22.00,64.99,95,TRUE,2023-11-15 09:00:00+00
+35,9,DeskMat Wool Felt Minimalist Desk Pad,PROD-09-1035,9.00,29.99,170,TRUE,2023-11-15 09:00:00+00
+36,10,Rover 35L Water-Resistant Travel Backpack,PROD-10-1036,34.00,94.99,85,TRUE,2023-11-15 09:00:00+00
+37,10,Nomad Insulated Stainless Steel Flask (32oz),PROD-10-1037,8.50,29.99,210,TRUE,2023-11-15 09:00:00+00
+38,10,CampLite Ultralight 2-Person Backpacking Tent,PROD-10-1038,78.00,199.99,45,TRUE,2023-11-15 09:00:00+00

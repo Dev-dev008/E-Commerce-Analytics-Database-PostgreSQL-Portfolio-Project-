@@ -1,0 +1,11 @@
+category_id,category_name,parent_category_id,description
+1,Electronics,,"Personal electronics, computing, and accessories"
+2,Audio & Headphones,1,"High-fidelity audio equipment, wireless earphones, and soundbars"
+3,Smart Home,1,"Connected home devices, smart lighting, and security"
+4,Apparel & Fashion,,"Men's, women's, and unisex everyday apparel"
+5,Footwear,4,"Athletic, casual, and formal shoes"
+6,Home & Kitchen,,"Cookware, kitchen appliances, and storage essentials"
+7,Fitness & Wellness,,"Home gym equipment, yoga gear, and health tracking"
+8,Beauty & Personal Care,,"Skincare, haircare, and daily grooming essentials"
+9,Office & Workspace,,"Ergonomic furniture, desk organization, and productivity tools"
+10,Outdoor & Travel,,"Backpacks, camping gear, and travel luggage"

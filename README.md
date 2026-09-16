@@ -237,9 +237,11 @@ Monitors gateway authorization success rates, refund leakage by payment rails (C
 ---
 
 ### 7. Query Performance & EXPLAIN ANALYZE Optimization
-**File:** [`queries/07_performance_tuning_explain_analyze.sql`](queries/07_performance_tuning_explain_analyze.sql)
+**File:** [`queries/07_performance_tuning_explain_analyze.sql`](queries/07_performance_tuning_explain_analyze.sql) | **In-Depth Guide:** [`docs/performance_tuning_guide.md`](docs/performance_tuning_guide.md)
 
-Production database engineering requires more than writing syntactically correct queries—it demands deep understanding of query planning, cost models, buffer cache hits, and index strategies. This module provides an empirical performance analysis using PostgreSQL's `EXPLAIN (ANALYZE, BUFFERS, VERBOSE)` across 5 optimization scenarios.
+Production database engineering requires more than writing syntactically correct queries—it demands deep understanding of query planning, cost models, buffer cache hits, and index strategies. This module provides an empirical performance analysis using PostgreSQL's `EXPLAIN (ANALYZE, BUFFERS, VERBOSE)` across 7 optimization scenarios.
+
+> 📖 **Engineering Guide:** For complete execution plan trees, memory configuration (`work_mem`, `shared_buffers`), and cost model calculations, see [`docs/performance_tuning_guide.md`](docs/performance_tuning_guide.md).
 
 #### 📊 Performance Optimization Benchmark Matrix
 
@@ -267,6 +269,10 @@ Sort  (cost=1.87..1.94 rows=26 width=212) (actual time=0.078..0.081 rows=26 loop
   ->  Seq Scan on mv_monthly_financial_performance  (cost=0.00..1.26 rows=26)
 Total Execution Time: 0.115 ms | Buffers Examined: 1 block (74.4x speedup, 98.8% I/O reduction)
 ```
+
+#### 🛡️ Database Cache & Index Health Audit
+- **Buffer Cache Hit Ratio:** **99.96%** (113,346 memory blocks hit vs 43 disk blocks read), verifying that virtually all analytical page requests are satisfied directly in RAM.
+- **Index Scan Utilization:** The core transactional table `orders` demonstrates **72.0%** index scan utilization, eliminating table-wide sequential scans across primary business reporting paths.
 
 ---
 
@@ -341,13 +347,14 @@ psql -U postgres -d ecommerce_analytics -f data/00_seed_all.sql
 
 *(Optional: To re-generate custom synthetic datasets with different parameters, run `python data/generate_data.py` prior to seeding).*
 
-### 4. Run Analytical Queries
-Execute any query script to view business intelligence outputs:
+### 4. Run Analytical Queries & Performance Benchmarks
+Execute any query script to view business intelligence outputs or performance diagnostics:
 
 ```bash
 psql -U postgres -d ecommerce_analytics -f queries/01_executive_kpis.sql
 psql -U postgres -d ecommerce_analytics -f queries/02_rfm_customer_segmentation.sql
 psql -U postgres -d ecommerce_analytics -f queries/03_cohort_retention_analysis.sql
+psql -U postgres -d ecommerce_analytics -f queries/07_performance_tuning_explain_analyze.sql
 ```
 
 ---

@@ -2,6 +2,7 @@
 
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-14%2B-336791?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org/)
 [![SQL Analytics](https://img.shields.io/badge/Advanced_SQL-CTEs_%7C_Window_Functions-blue?style=for-the-badge&logo=databricks&logoColor=white)](https://github.com/)
+[![Performance Tuning](https://img.shields.io/badge/Performance-EXPLAIN_ANALYZE-orange?style=for-the-badge&logo=speedtest&logoColor=white)](docs/performance_tuning_guide.md)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg?style=for-the-badge)](LICENSE)
 [![Status](https://img.shields.io/badge/Project_Status-Production_Ready-brightgreen?style=for-the-badge)]()
 
@@ -23,6 +24,7 @@ This repository serves as an end-to-end data engineering and analytics portfolio
   - [4. Product Catalog Pareto Analysis (80/20 Rule)](#4-product-catalog-pareto-analysis-8020-rule)
   - [5. Logistics & SLA Transit Analysis](#5-logistics--sla-transit-analysis)
   - [6. Payment Gateway Health & Return Leakage](#6-payment-gateway-health--return-leakage)
+  - [7. Query Performance & EXPLAIN ANALYZE Optimization](#7-query-performance--explain-analyze-optimization)
 - [Repository Structure](#-repository-structure)
 - [Quick Start Guide](#-quick-start-guide)
 - [Dataset Characteristics](#-dataset-characteristics)
@@ -234,6 +236,40 @@ Monitors gateway authorization success rates, refund leakage by payment rails (C
 
 ---
 
+### 7. Query Performance & EXPLAIN ANALYZE Optimization
+**File:** [`queries/07_performance_tuning_explain_analyze.sql`](queries/07_performance_tuning_explain_analyze.sql)
+
+Production database engineering requires more than writing syntactically correct queries—it demands deep understanding of query planning, cost models, buffer cache hits, and index strategies. This module provides an empirical performance analysis using PostgreSQL's `EXPLAIN (ANALYZE, BUFFERS, VERBOSE)` across 5 optimization scenarios.
+
+#### 📊 Performance Optimization Benchmark Matrix
+
+| Optimization Case Study | Baseline Execution Strategy | Optimized Execution Strategy | Planner Cost (Before → After) | Execution Time (Before → After) | Buffer I/O Reduction | Key Architectural Takeaway |
+| :--- | :--- | :--- | :---: | :---: | :---: | :--- |
+| **1. Foreign Key Filter & Join** | `Seq Scan on order_items` (discards 3,508 rows) | `Bitmap Index Scan` on `idx_order_items_product_id` | 78.24 → **44.18** | 0.704 ms → **0.541 ms** | Shared hit blocks reduced | Prevents full table scan on 3,600+ rows; scales O(log N) on multi-million row tables. |
+| **2. Composite Index & Ordering** | `Bitmap Scan` + In-memory `Quicksort` | `Index Scan` on `idx_orders_customer_date` | 13.77 → **8.33** | 0.169 ms → **0.040 ms** (76% faster) | Zero sort memory (`work_mem`) | Pre-sorted B-Tree index completely eliminates explicit memory sort overhead. |
+| **3. Hot Operational Table** | Full `Seq Scan` (2,141 rows evaluated) | `Partial Index Scan` on `idx_orders_active_pipeline` | 62.76 → **41.56** | 2.425 ms → **0.328 ms** (86% faster) | 88% smaller index size | Indexes only open orders (`pending`, `processing`, `shipped`), keeping index cached in RAM. |
+| **4. Substring Fuzzy Search** | Full `Seq Scan` (Standard B-Tree fails on `%...%`) | `Bitmap GIN Index Scan` on `idx_products_name_trgm` | 12.00 → **30.70** (Indexed) | Full Table Scan → Direct GIN Lookup | Fixed page reads | Trigram 3-gram token indexing (`pg_trgm`) enables sub-millisecond catalog autocomplete. |
+| **5. Multi-Table OLAP Aggregation** | 2-Table Hash Join + GroupAggregate + 2 Quicksorts | Direct Single-Page Read on Materialized View | 504.76 → **1.94** (99.6% drop) | 8.564 ms → **0.115 ms** (74x faster!) | 81 hits → **1 single buffer hit** | Pre-computed summary replaces expensive dynamic joins for real-time executive dashboards. |
+
+#### 🔍 Execution Plan Deep Dive: Dynamic Query vs. Materialized View
+
+```text
+Baseline (Dynamic Join & Aggregation across orders + order_items):
+Sort  (cost=504.26..504.76 rows=200 width=220) (actual time=8.320..8.322 rows=26 loops=1)
+  Sort Method: quicksort  Memory: 27kB  Buffers: shared hit=81
+  ->  GroupAggregate  (cost=391.53..496.61 rows=200 width=220) (actual time=5.796..8.267)
+        ->  Sort (Hash Join between orders and order_items) Memory: 342kB
+Total Execution Time: 8.564 ms | Buffers Examined: 81 shared hit blocks
+
+Optimized (Pre-Aggregated Materialized View mv_monthly_financial_performance):
+Sort  (cost=1.87..1.94 rows=26 width=212) (actual time=0.078..0.081 rows=26 loops=1)
+  Buffers: shared hit=1
+  ->  Seq Scan on mv_monthly_financial_performance  (cost=0.00..1.26 rows=26)
+Total Execution Time: 0.115 ms | Buffers Examined: 1 block (74.4x speedup, 98.8% I/O reduction)
+```
+
+---
+
 ## 🗂️ Repository Structure
 
 ```text
@@ -241,7 +277,8 @@ ecommerce-analytics-postgres/
 ├── README.md                          # Showcase portfolio presentation
 ├── .gitignore                         # Git exclusion rules
 ├── docs/
-│   └── data_dictionary.md             # Complete schema data dictionary & data types
+│   ├── data_dictionary.md             # Complete schema data dictionary & data types
+│   └── performance_tuning_guide.md    # In-depth EXPLAIN ANALYZE execution plan breakdown
 ├── schema/
 │   ├── 01_create_database.sql         # Database initialization & extensions
 │   ├── 02_create_tables.sql           # DDL with 3NF relational models & constraints
@@ -263,7 +300,8 @@ ecommerce-analytics-postgres/
     ├── 03_cohort_retention_analysis.sql # Month-over-Month cohort retention matrix
     ├── 04_product_pareto_analysis.sql # 80/20 Pareto revenue distribution
     ├── 05_logistics_and_shipping.sql  # Delivery duration, P90 latency & SLA compliance
-    └── 06_payment_and_returns.sql     # Payment gateway reliability & refund audit
+    ├── 06_payment_and_returns.sql     # Payment gateway reliability & refund audit
+    └── 07_performance_tuning_explain_analyze.sql # EXPLAIN ANALYZE optimization, index design & benchmarks
 ```
 
 ---
